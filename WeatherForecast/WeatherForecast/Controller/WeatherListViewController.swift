@@ -126,6 +126,38 @@ final class WeatherListViewController: UIViewController {
             self?.endRefreshing()
         }
     }
+
+    @objc private func locationSettingButtonTapped() {
+        let alert = UIAlertController(title: "위치변경", message: "날씨를 받아올 위치의 위도와 경도를 입력해주세요", preferredStyle: .alert)
+        let confirm = UIAlertAction(title: "변경", style: .default) { confirm in
+            guard let longitudeString = alert.textFields?.first?.text,
+                  let latitudeString =  alert.textFields?.last?.text else { return }
+
+            guard let longitude = Double(longitudeString),
+                  let latitude = Double(latitudeString) else { return }
+
+            print(longitude, latitude)
+            let coordinate = Coordinate(longitude: longitude, latitude: latitude)
+
+            self.fetchWeather(coordinate: coordinate)
+            self.fetchForecast(coordinate: coordinate)
+
+            self.addressManager.fetchAddress(of: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude))
+        }
+
+        let cancel = UIAlertAction(title: "취소", style: .cancel)
+
+        alert.addTextField { textFieid in
+            textFieid.placeholder = "위도를 입력하세요."
+        }
+        alert.addTextField { textFieid in
+            textFieid.placeholder = "경도를 입력하세요."
+        }
+        alert.addAction(confirm)
+        alert.addAction(cancel)
+
+        self.present(alert, animated: true)
+    }
     
     // MARK: - Layout
 
@@ -162,6 +194,8 @@ final class WeatherListViewController: UIViewController {
               let headerView = self.collectionView.visibleSupplementaryViews(
             ofKind: UICollectionView.elementKindSectionHeader
         ).first as? WeatherHeaderView else { return }
+        
+        headerView.locationSettingButton.addTarget(self, action: #selector (locationSettingButtonTapped), for: .touchUpInside)
 
         Task {
             let image = try await repository.fetchWeatherIconImage(withID: currentWeather.weathers.first?.icon ?? "")

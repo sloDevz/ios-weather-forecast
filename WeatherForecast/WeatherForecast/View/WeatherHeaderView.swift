@@ -86,6 +86,12 @@ final class WeatherHeaderView: UICollectionReusableView {
         return stackView
     }()
 
+    let locationSettingButton: UIButton = {
+        let button = UIButton()
+        button.setImage(UIImage(systemName: "location.circle"), for: .normal)
+        return button
+    }()
+
     // MARK: - LifeCycle
 
     override init(frame: CGRect) {
@@ -131,6 +137,15 @@ final class WeatherHeaderView: UICollectionReusableView {
             infoStackView.topAnchor.constraint(equalTo: topAnchor, constant: Metric.infoStackViewTopInset),
             infoStackView.leadingAnchor.constraint(equalTo: weatherIconImageView.trailingAnchor, constant: Metric.infoStackViewLeadingInset),
             infoStackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: Metric.infoStackViewBottomInset),
+        ])
+
+        addSubview(locationSettingButton)
+        locationSettingButton.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            locationSettingButton.widthAnchor.constraint(equalToConstant: 25),
+            locationSettingButton.heightAnchor.constraint(equalToConstant: 25),
+            locationSettingButton.topAnchor.constraint(equalTo: topAnchor, constant: 5),
+            locationSettingButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -15)
         ])
     }
 
