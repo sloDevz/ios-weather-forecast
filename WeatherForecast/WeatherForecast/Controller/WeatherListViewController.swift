@@ -73,30 +73,20 @@ final class WeatherListViewController: UIViewController {
     }
 
     private func fetchWeather(coordinate: Coordinate) {
-        endRefreshingDispatchGroup.enter()
-        repository.fetchWeather(coordinate: coordinate) { [weak self] result in
-            guard let self else { return }
-            switch result {
-            case .success(let currentWeather):
-                self.currentWeather = currentWeather
-            case .failure(let error):
-                log(.network, error: error)
-            }
+        Task {
+            endRefreshingDispatchGroup.enter()
+            let currentWeather = try await repository.fetchWeather(coordinate: coordinate)
+            self.currentWeather = currentWeather
             self.endRefreshingDispatchGroup.leave()
         }
     }
 
     private func fetchForecast(coordinate: Coordinate) {
-        endRefreshingDispatchGroup.enter()
-        repository.fetchForecast(coordinate: coordinate) { [weak self] result in
-            guard let self else { return }
-            switch result {
-            case .success(let forecast):
-                self.forecastDatas = forecast.forecastDatas
-            case .failure(let error):
-                log(.network, error: error)
-            }
-            self.endRefreshingDispatchGroup.leave()
+        Task {
+            endRefreshingDispatchGroup.enter()
+            let forecast = try await repository.fetchForecast(coordinate: coordinate)
+            self.forecastDatas = forecast.forecastDatas
+            endRefreshingDispatchGroup.leave()
         }
     }
     
@@ -168,25 +158,19 @@ final class WeatherListViewController: UIViewController {
     }
 
     private func updateHeaderView() {
-        guard let currentWeather else { return }
+        guard let currentWeather,
+              let headerView = self.collectionView.visibleSupplementaryViews(
+            ofKind: UICollectionView.elementKindSectionHeader
+        ).first as? WeatherHeaderView else { return }
 
-        repository.fetchWeatherIconImage(withID: currentWeather.weathers.first?.icon ?? "") { result in
-            switch result {
-            case.success(let image):
-                DispatchQueue.main.async {
-                    guard let headerView = self.collectionView.visibleSupplementaryViews(
-                        ofKind: UICollectionView.elementKindSectionHeader
-                    ).first as? WeatherHeaderView else { return }
+        Task {
+            let image = try await repository.fetchWeatherIconImage(withID: currentWeather.weathers.first?.icon ?? "")
 
-                    headerView.configure(
-                        with: currentWeather.weatherDetail,
-                        address: self.addressManager.address,
-                        icon: image
-                    )
-                }
-            case.failure(let error):
-                log(.network, error: error)
-            }
+            headerView.configure(
+                with: currentWeather.weatherDetail,
+                address: self.addressManager.address,
+                icon: image
+            )
         }
     }
 
@@ -255,15 +239,9 @@ extension WeatherListViewController: UICollectionViewDataSource {
         let temperature = String(weather.weatherDetail.temperature)
         let iconID = weather.weathers.first?.icon ?? ""
 
-        repository.fetchWeatherIconImage(withID: iconID) { result in
-            switch result {
-            case .success(let image):
-                DispatchQueue.main.async {
-                    cell.configure(icon: image)
-                }
-            case .failure(let error):
-                log(.network, error: error)
-            }
+        Task {
+            let icon = try await repository.fetchWeatherIconImage(withID: iconID)
+            cell.configure(icon: icon)
         }
 
         cell.configure(date: date, temperature: temperature)

@@ -45,71 +45,41 @@ final class OpenWeatherRepository {
 
     // MARK: - Public
 
-    func fetchWeather(coordinate: Coordinate,
-                      completion: @escaping (Result<CurrentWeather, NetworkError>) -> Void) {
+    func fetchWeather(coordinate: Coordinate) async throws -> CurrentWeather {
         let url = generateURL(
             withPath: Constant.weatherPath,
             coordinate: coordinate
         )
 
-        service.performRequest(with: url, httpMethodType: HTTPMethodType.get) { result in
-            switch result {
-            case .success(let data):
-                do {
-                    let weatherData = try self.deserializer.deserialize(CurrentWeather.self, data: data)
-                    completion(.success(weatherData))
-                } catch {
-                    completion(.failure(.parse))
-                }
-            case .failure(let error):
-                completion(.failure(error))
-            }
-        }
+        let data = try await service.performRequest(with: url, httpMethodType: HTTPMethodType.get)
+        let weatherData = try self.deserializer.deserialize(CurrentWeather.self, data: data)
+        return weatherData
     }
 
-    func fetchForecast(coordinate: Coordinate,
-                       completion: @escaping (Result<Forecast, NetworkError>) -> Void) {
+    func fetchForecast(coordinate: Coordinate) async throws -> Forecast {
         let url = generateURL(
             withPath: Constant.forecastPath,
             coordinate: coordinate
         )
 
-        service.performRequest(with: url, httpMethodType: HTTPMethodType.get) { result in
-            switch result {
-            case .success(let data):
-                do {
-                    let forecastData = try self.deserializer.deserialize(Forecast.self, data: data)
-                    completion(.success(forecastData))
-                } catch {
-                    completion(.failure(.parse))
-                }
-            case .failure(let error):
-                completion(.failure(error))
-            }
-        }
+        let data = try await service.performRequest(with: url, httpMethodType: HTTPMethodType.get)
+        let forecastData = try self.deserializer.deserialize(Forecast.self, data: data)
+        return forecastData
     }
 
-    func fetchWeatherIconImage(withID iconID: String, completion: @escaping (Result<UIImage, NetworkError>) -> Void) {
+    func fetchWeatherIconImage(withID iconID: String) async throws -> UIImage {
         let url = generateIconImageURL(withID: iconID)
 
         if let iconImage = ImageCacheManager.shared.get(for: iconID) {
-            completion(.success(iconImage))
-            return
+            return iconImage
         }
 
-        service.performRequest(with: url, httpMethodType: .get) { result in
-            switch result {
-            case .success(let data):
-                guard let icon = UIImage(data: data) else {
-                    completion(.failure(.invalidImage))
-                    return
-                }
-                ImageCacheManager.shared.store(icon, for: iconID)
-                completion(.success(icon))
-            case .failure(let error):
-                completion(.failure(error))
-            }
+        let data = try await service.performRequest(with: url, httpMethodType: .get)
+        guard let icon = UIImage(data: data) else {
+            throw NetworkError.invalidImage
         }
+        ImageCacheManager.shared.store(icon, for: iconID)
+        return icon
     }
 
     // MARK: - Private
