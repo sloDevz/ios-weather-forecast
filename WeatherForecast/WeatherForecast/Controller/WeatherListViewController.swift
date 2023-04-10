@@ -48,14 +48,28 @@ final class WeatherListViewController: UIViewController {
 
     private let refreshControl = UIRefreshControl()
 
+    private let alertController = UIAlertController(title: "위치변경", message: "날씨를 받아올 위치의 위도와 경도를 입력해주세요", preferredStyle: .alert)
+
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupLocationDataManager()
         setupCollectionView()
+        setupRefreshControl()
+        setupAlertController()
         setupViewBackground()
         setupLayout()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+
+        guard let headerView = self.collectionView.visibleSupplementaryViews(
+                ofKind: UICollectionView.elementKindSectionHeader
+              ).first as? WeatherHeaderView else { return }
+
+        headerView.locationSettingButton.addTarget(self, action: #selector(locationSettingButtonTapped), for: .touchUpInside)
     }
 
     // MARK: - Private
@@ -102,8 +116,6 @@ final class WeatherListViewController: UIViewController {
             forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
             withReuseIdentifier: WeatherHeaderView.identifier
         )
-
-        setupRefreshControl()
     }
 
     private func setupRefreshControl() {
@@ -127,16 +139,25 @@ final class WeatherListViewController: UIViewController {
         }
     }
 
-    @objc private func locationSettingButtonTapped() {
-        let alert = UIAlertController(title: "위치변경", message: "날씨를 받아올 위치의 위도와 경도를 입력해주세요", preferredStyle: .alert)
-        let confirm = UIAlertAction(title: "변경", style: .default) { confirm in
-            guard let longitudeString = alert.textFields?.first?.text,
-                  let latitudeString =  alert.textFields?.last?.text else { return }
+    private func setupAlertController() {
+        setupAlertControllerTextField()
+        setupAlertControllerAction()
+    }
 
-            guard let longitude = Double(longitudeString),
-                  let latitude = Double(latitudeString) else { return }
+    private func setupAlertControllerTextField() {
+        alertController.addTextField { textFieid in
+            textFieid.placeholder = "위도를 입력하세요."
+        }
+        alertController.addTextField { textFieid in
+            textFieid.placeholder = "경도를 입력하세요."
+        }
+    }
 
-            print(longitude, latitude)
+    private func setupAlertControllerAction() {
+        let confirmAction = UIAlertAction(title: "변경", style: .default) { confirm in
+            guard let longitude = Double(self.alertController.textFields?.first?.text ?? ""),
+                  let latitude = Double(self.alertController.textFields?.last?.text ?? "") else { return }
+
             let coordinate = Coordinate(longitude: longitude, latitude: latitude)
 
             self.fetchWeather(coordinate: coordinate)
@@ -145,18 +166,14 @@ final class WeatherListViewController: UIViewController {
             self.addressManager.fetchAddress(of: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude))
         }
 
-        let cancel = UIAlertAction(title: "취소", style: .cancel)
+        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
 
-        alert.addTextField { textFieid in
-            textFieid.placeholder = "위도를 입력하세요."
-        }
-        alert.addTextField { textFieid in
-            textFieid.placeholder = "경도를 입력하세요."
-        }
-        alert.addAction(confirm)
-        alert.addAction(cancel)
+        alertController.addAction(confirmAction)
+        alertController.addAction(cancelAction)
+    }
 
-        self.present(alert, animated: true)
+    @objc private func locationSettingButtonTapped() {
+        present(alertController, animated: true)
     }
     
     // MARK: - Layout
@@ -194,8 +211,6 @@ final class WeatherListViewController: UIViewController {
               let headerView = self.collectionView.visibleSupplementaryViews(
             ofKind: UICollectionView.elementKindSectionHeader
         ).first as? WeatherHeaderView else { return }
-        
-        headerView.locationSettingButton.addTarget(self, action: #selector (locationSettingButtonTapped), for: .touchUpInside)
 
         Task {
             let image = try await repository.fetchWeatherIconImage(withID: currentWeather.weathers.first?.icon ?? "")
