@@ -10,14 +10,8 @@ import Foundation
 enum DateFormatUtil {
     
     // MARK: - Properties
-    
-    private static let convertFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        return formatter
-    }()
-    
-    private static let resultFormatter: DateFormatter = {
+
+    private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "MM/dd(EEE) HH시"
         return formatter
@@ -25,12 +19,10 @@ enum DateFormatUtil {
     
     // MARK: - Public
     
-    static func format(with dateString: String) -> String {
-        guard let date = convertFormatter.date(from: dateString) else {
-            return "00/00(000) 00시"
-        }
+    static func format(with timestamp: Int) -> String {
+        let date = Date(timeIntervalSince1970: TimeInterval(timestamp))
 
-        let formattedDate = resultFormatter.string(from: date)
+        let formattedDate = dateFormatter.string(from: date)
         return formattedDate
     }
 

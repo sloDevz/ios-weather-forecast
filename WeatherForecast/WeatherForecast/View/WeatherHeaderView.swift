@@ -86,7 +86,7 @@ final class WeatherHeaderView: UICollectionReusableView {
         return stackView
     }()
 
-    private let locationSettingButton: UIButton = {
+    let locationSettingButton: UIButton = {
         let button = UIButton()
         button.setImage(UIImage(systemName: "location.circle"), for: .normal)
         return button
@@ -113,10 +113,6 @@ final class WeatherHeaderView: UICollectionReusableView {
         )
         addressLabel.text = address
         weatherIconImageView.image = icon
-    }
-
-    func setupChangeLocationButtonAction(_ action: Selector) {
-        locationSettingButton.addTarget(self, action: action, for: .touchUpInside)
     }
 
     // MARK: - Private

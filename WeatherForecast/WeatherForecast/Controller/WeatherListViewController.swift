@@ -64,12 +64,7 @@ final class WeatherListViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-
-        guard let headerView = self.collectionView.visibleSupplementaryViews(
-                ofKind: UICollectionView.elementKindSectionHeader
-              ).first as? WeatherHeaderView else { return }
-
-        headerView.setupChangeLocationButtonAction(#selector(locationSettingButtonTapped))
+        setupHeaderLocationSettingButtonAction()
     }
 
     // MARK: - Private
@@ -89,8 +84,11 @@ final class WeatherListViewController: UIViewController {
     private func fetchWeather(coordinate: Coordinate) {
         Task {
             endRefreshingDispatchGroup.enter()
-            let currentWeather = try await repository.fetchWeather(coordinate: coordinate)
+
+            let currentWeather = try await repository.fetchData(type: CurrentWeather.self,
+                                                                endpoint: .weather(coordinate: coordinate))
             self.currentWeather = currentWeather
+
             self.endRefreshingDispatchGroup.leave()
         }
     }
@@ -98,7 +96,8 @@ final class WeatherListViewController: UIViewController {
     private func fetchForecast(coordinate: Coordinate) {
         Task {
             endRefreshingDispatchGroup.enter()
-            let forecast = try await repository.fetchForecast(coordinate: coordinate)
+            let forecast = try await repository.fetchData(type: Forecast.self,
+                                                          endpoint: .forecast(coordinate: coordinate))
             self.forecastDatas = forecast.forecastDatas
             endRefreshingDispatchGroup.leave()
         }
@@ -172,6 +171,14 @@ final class WeatherListViewController: UIViewController {
         alertController.addAction(cancelAction)
     }
 
+    private func setupHeaderLocationSettingButtonAction() {
+        guard let headerView = self.collectionView.visibleSupplementaryViews(
+            ofKind: UICollectionView.elementKindSectionHeader
+        ).first as? WeatherHeaderView else { return }
+
+        headerView.locationSettingButton.addTarget(self, action: #selector(locationSettingButtonTapped), for: .touchUpInside)
+    }
+
     @objc private func locationSettingButtonTapped() {
         present(alertController, animated: true)
     }
@@ -209,8 +216,8 @@ final class WeatherListViewController: UIViewController {
     private func updateHeaderView() {
         guard let currentWeather,
               let headerView = self.collectionView.visibleSupplementaryViews(
-            ofKind: UICollectionView.elementKindSectionHeader
-        ).first as? WeatherHeaderView else { return }
+                ofKind: UICollectionView.elementKindSectionHeader
+              ).first as? WeatherHeaderView else { return }
 
         Task {
             let image = try await repository.fetchWeatherIconImage(withID: currentWeather.weathers.first?.icon ?? "")
@@ -284,7 +291,7 @@ extension WeatherListViewController: UICollectionViewDataSource {
             return UICollectionViewCell()
         }
 
-        let date = DateFormatUtil.format(with: weather.dateString)
+        let date = DateFormatUtil.format(with: weather.timestamp)
         let temperature = String(weather.weatherDetail.temperature)
         let iconID = weather.weathers.first?.icon ?? ""
 
