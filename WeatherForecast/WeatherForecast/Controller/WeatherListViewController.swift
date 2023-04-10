@@ -69,7 +69,7 @@ final class WeatherListViewController: UIViewController {
                 ofKind: UICollectionView.elementKindSectionHeader
               ).first as? WeatherHeaderView else { return }
 
-        headerView.locationSettingButton.addTarget(self, action: #selector(locationSettingButtonTapped), for: .touchUpInside)
+        headerView.setupChangeLocationButtonAction(#selector(locationSettingButtonTapped))
     }
 
     // MARK: - Private
