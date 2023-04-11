@@ -16,7 +16,6 @@ final class WeatherListViewController: UIViewController {
     }
     
     // MARK: - Properties
-    
     private let repository = OpenWeatherRepository(
         deserializer: JSONDesirializer(),
         service: NetworkService()
@@ -45,6 +44,7 @@ final class WeatherListViewController: UIViewController {
         frame: .zero,
         collectionViewLayout: createCollectionViewLayout()
     )
+    private let forecastGraphView = ForecastGraphView()
 
     private let refreshControl = UIRefreshControl()
 
@@ -60,11 +60,26 @@ final class WeatherListViewController: UIViewController {
         setupAlertController()
         setupViewBackground()
         setupLayout()
+        setupGraphView()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         setupHeaderLocationSettingButtonAction()
+    }
+
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        if UIDevice.current.orientation.isPortrait {
+            collectionView.isHidden = false
+            forecastGraphView.isHidden = true
+            return
+        }
+        if UIDevice.current.orientation.isLandscape {
+            forecastGraphView.isHidden = true
+            forecastGraphView.isHidden = false
+            return
+        }
     }
 
     // MARK: - Private
@@ -115,6 +130,21 @@ final class WeatherListViewController: UIViewController {
             forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
             withReuseIdentifier: WeatherHeaderView.identifier
         )
+    }
+
+    private func setupGraphView() {
+        view.addSubview(forecastGraphView)
+        forecastGraphView.isHidden = true
+        forecastGraphView.backgroundColor = .red
+
+        forecastGraphView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            forecastGraphView.topAnchor.constraint(equalTo: view.topAnchor),
+            forecastGraphView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            forecastGraphView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            forecastGraphView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
+
     }
 
     private func setupRefreshControl() {
@@ -231,6 +261,7 @@ final class WeatherListViewController: UIViewController {
     }
 
     private func updateListView() {
+        forecastGraphView.updateForecastDatas(with: forecastDatas)
         DispatchQueue.main.async {
             self.collectionView.reloadData()
         }
