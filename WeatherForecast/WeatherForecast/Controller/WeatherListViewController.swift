@@ -84,7 +84,7 @@ final class WeatherListViewController: UIViewController {
             return
         }
         if UIDevice.current.orientation.isLandscape {
-            forecastGraphView.isHidden = true
+            collectionView.isHidden = true
             forecastGraphView.isHidden = false
             return
         }
@@ -141,14 +141,14 @@ final class WeatherListViewController: UIViewController {
     private func setupGraphView() {
         view.addSubview(forecastGraphView)
         forecastGraphView.isHidden = true
-        forecastGraphView.backgroundColor = .black
+//        forecastGraphView.backgroundColor = .black
 
         forecastGraphView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            forecastGraphView.topAnchor.constraint(equalTo: view.topAnchor),
-            forecastGraphView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            forecastGraphView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            forecastGraphView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+            forecastGraphView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            forecastGraphView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+            forecastGraphView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            forecastGraphView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor)
         ])
 
     }
