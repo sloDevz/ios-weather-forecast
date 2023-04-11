@@ -66,10 +66,17 @@ final class WeatherListViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         setupHeaderLocationSettingButtonAction()
+        updateViewByDeviceOrientation()
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
+        updateViewByDeviceOrientation()
+    }
+
+    // MARK: - Private
+
+    private func updateViewByDeviceOrientation() {
         if UIDevice.current.orientation.isPortrait {
             collectionView.isHidden = false
             forecastGraphView.isHidden = true
@@ -81,8 +88,6 @@ final class WeatherListViewController: UIViewController {
             return
         }
     }
-
-    // MARK: - Private
 
     private func setupLocationDataManager() {
         locationDataManager.delegate = self
