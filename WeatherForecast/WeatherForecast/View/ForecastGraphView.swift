@@ -12,14 +12,24 @@ class ForecastGraphView: UIView {
     // MARK: - Constants
 
     private enum Constants {
+        static let numberOfPresentingData = 8
+
         static let margin: CGFloat = 20.0
         static let topBorder: CGFloat = 60
         static let bottomBorder: CGFloat = 50
+
+        static let circleDotDiameter: CGFloat = 8
     }
 
     // MARK: - Properties
 
     private var forecastDatas: [ForecastData] = [] {
+        didSet {
+            setNeedsDisplay()
+        }
+    }
+
+    override var isHidden: Bool {
         didSet {
             setNeedsDisplay()
         }
@@ -51,7 +61,8 @@ class ForecastGraphView: UIView {
     // MARK: - Public
 
     func updateForecastDatas(with data: [ForecastData]) {
-        forecastDatas = data
+        guard data.count >= Constants.numberOfPresentingData else { return }
+        forecastDatas = Array(data[0..<Constants.numberOfPresentingData])
     }
 
     // MARK: - Private
@@ -62,7 +73,7 @@ class ForecastGraphView: UIView {
 
         let graphPath = UIBezierPath()
 
-        graphPath.lineWidth = 5
+        graphPath.lineWidth = 3
 
         guard let points = drawingPoints(of: graphPoints, with: rect),
               let firstPoint = points.first else { return }
@@ -76,11 +87,13 @@ class ForecastGraphView: UIView {
         }
 
         graphPath.stroke()
+
+        drawCircleDots(of: points)
     }
 
     private func drawingPoints(of graphPoints: [Double], with rect: CGRect) -> [CGPoint]? {
-        let width = rect.width
-        let height = rect.height
+        let width = bounds.width
+        let height = bounds.height
 
         let graphWidth = width - (Constants.margin * 2) - 4
         // 특정 점의 X 좌표
@@ -102,6 +115,28 @@ class ForecastGraphView: UIView {
 
         return (0..<graphPoints.count).map { index in
             CGPoint(x: columnXPoint(index), y: columnYPoint(index))
+        }
+    }
+
+    private func drawCircleDots(of points: [CGPoint]) {
+        let circlePoints = points.map { point in
+            CGPoint(
+                x: point.x - Constants.circleDotDiameter / 2,
+                y: point.y - Constants.circleDotDiameter / 2
+            )
+        }
+
+        let circleRects = circlePoints.map { circlePoint in
+            CGRect(origin: circlePoint,
+                   size: CGSize(width: Constants.circleDotDiameter, height: Constants.circleDotDiameter))
+        }
+
+        let circles = circleRects.map { circleRect in
+            UIBezierPath(ovalIn: circleRect)
+        }
+
+        circles.forEach { circle in
+            circle.fill()
         }
     }
 
