@@ -33,6 +33,7 @@ final class WeatherListViewController: UIViewController {
     private var forecastDatas: [ForecastData] = [] {
         didSet {
             updateListView()
+            forecastGraphView.updateForecastDatas(with: forecastDatas)
         }
     }
 
@@ -140,7 +141,7 @@ final class WeatherListViewController: UIViewController {
     private func setupGraphView() {
         view.addSubview(forecastGraphView)
         forecastGraphView.isHidden = true
-        forecastGraphView.backgroundColor = .red
+        forecastGraphView.backgroundColor = .black
 
         forecastGraphView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
