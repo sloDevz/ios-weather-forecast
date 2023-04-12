@@ -7,7 +7,7 @@
 
 import UIKit
 
-class ForecastGraphView: UIView {
+final class ForecastGraphView: UIView {
 
     // MARK: - Constants
 
@@ -19,7 +19,21 @@ class ForecastGraphView: UIView {
         static let bottomMargin: CGFloat = 10
 
         static let circleDotDiameter: CGFloat = 8
-        static let gridStandard: CGFloat = 10
+        static let gridStandard: CGFloat = 5
+    }
+
+    private enum Mode {
+        case temperature
+        case humidity
+
+        var color: UIColor {
+            switch self {
+            case .temperature:
+                return .gray
+            case .humidity:
+                return .white
+            }
+        }
     }
 
     // MARK: - Properties
@@ -49,15 +63,18 @@ class ForecastGraphView: UIView {
     // MARK: - Draw
 
     override func draw(_ rect: CGRect) {
-//        let humidities = forecastDatas.map { Double($0.weatherDetail.humidity) }
-//        drawGraphLines(rect, of: humidities, color: .white)
+        let humidities = forecastDatas.map { Double($0.weatherDetail.humidity) }
+        print(">>> humidities", humidities)
+        drawGraphLines(rect, of: humidities, color: .white, mode: .humidity)
 
-//        let minimumTemperatures = forecastDatas.map { $0.weatherDetail.minimumTemperature }
-//        drawGraphLines(rect, of: minimumTemperatures, color: .blue)
-//
+        let minimumTemperatures = forecastDatas.map { $0.weatherDetail.minimumTemperature }
+        drawGraphLines(rect, of: minimumTemperatures, color: .blue, mode: .temperature)
+
         let maximumTemperatures = forecastDatas.map { $0.weatherDetail.maximumTemperature }
         print(">>> maximumTemperatures", maximumTemperatures)
-        drawGraphLines(rect, of: maximumTemperatures, color: .red.withAlphaComponent(0.5))
+        drawGraphLines(rect, of: maximumTemperatures, color: .red.withAlphaComponent(0.5), mode: .temperature)
+
+        drawBackGroundLineForDebug()
     }
 
     // MARK: - Public
@@ -69,7 +86,7 @@ class ForecastGraphView: UIView {
 
     // MARK: - Private
 
-    private func drawGraphLines(_ rect: CGRect, of pointValues: [Double], color: UIColor) {
+    private func drawGraphLines(_ rect: CGRect, of pointValues: [Double], color: UIColor, mode: Mode) {
         color.setFill()
         color.setStroke()
 
@@ -77,7 +94,7 @@ class ForecastGraphView: UIView {
 
         graphPath.lineWidth = 3
 
-        guard let points = drawingPoints(of: pointValues, with: rect),
+        guard let points = drawingPoints(of: pointValues, with: rect, mode: mode),
               let firstPoint = points.first else { return }
 
         // 처음 포인트는 이동
@@ -92,10 +109,10 @@ class ForecastGraphView: UIView {
 
         drawCircleDots(of: points)
 
-        drawGridLine(of: pointValues, with: rect)
+        drawGridLine(of: pointValues, with: rect, mode: mode)
     }
 
-    private func drawingPoints(of pointValues: [Double], with rect: CGRect) -> [CGPoint]? {
+    private func drawingPoints(of pointValues: [Double], with rect: CGRect, mode: Mode) -> [CGPoint]? {
         let width = bounds.width
         let height = bounds.height
 
@@ -109,8 +126,8 @@ class ForecastGraphView: UIView {
 
         let graphHeight = height - (Constants.topMargin + Constants.bottomMargin)
 
-        let maxRange = maxRange(of: pointValues)
-        let minRange = minRange(of: pointValues)
+        let maxRange = maxRange(of: pointValues, mode: mode)
+        let minRange = minRange(of: pointValues, mode: mode)
 
         print(">>> maxRange", maxRange)
         print(">>> minRange", minRange)
@@ -118,9 +135,7 @@ class ForecastGraphView: UIView {
         // 특정 점의 Y 좌표
         let columnYPoint = { (column: Int) -> CGFloat in
             let graphPointValue = pointValues[column]
-            print(">>> graphPointValue", graphPointValue)
             let yPoint = graphHeight * CGFloat(graphPointValue - minRange) / CGFloat(maxRange - minRange)
-            print(">>> yPoint", yPoint)
             return graphHeight - yPoint + Constants.topMargin // + Constants.topBorder  // 아래가 0이고 커질수록 위로 올라가기에, - 로 뒤집어줌.
         }
 
@@ -151,21 +166,21 @@ class ForecastGraphView: UIView {
         }
     }
 
-    private func drawGridLine(of pointValues: [Double], with rect: CGRect) {
+    private func drawGridLine(of pointValues: [Double], with rect: CGRect, mode: Mode) {
         let width = bounds.width
         let height = bounds.height
         let graphHeight = height - (Constants.topMargin + Constants.bottomMargin)
 
-        UIColor.gray.setFill()
-        UIColor.gray.setStroke()
+        mode.color.setFill()
+        mode.color.setStroke()
 
         let graphPath = UIBezierPath()
         graphPath.lineWidth = 1
 
-        let maxRange = maxRange(of: pointValues)
-        let minRange = minRange(of: pointValues)
+        let maxRange = maxRange(of: pointValues, mode: mode)
+        let minRange = minRange(of: pointValues, mode: mode)
 
-        let numberOfGrid = Int((maxRange - minRange) / Constants.gridStandard + 1)
+        let numberOfGrid = mode == .humidity ? 5 : Int((maxRange - minRange) / Constants.gridStandard)
 
         let gridSplitValue = graphHeight / CGFloat(numberOfGrid)
 
@@ -178,14 +193,37 @@ class ForecastGraphView: UIView {
         graphPath.stroke()
     }
 
-    private func minRange(of values: [Double]) -> Double {
+    private func minRange(of values: [Double], mode: Mode) -> Double {
+        if mode == .humidity {
+            return 0
+        }
         let minumumValue = values.min() ?? 0
         return (minumumValue / Constants.gridStandard).rounded() * Constants.gridStandard - Constants.gridStandard
     }
 
-    private func maxRange(of values: [Double]) -> Double {
+    private func maxRange(of values: [Double], mode: Mode) -> Double {
+        if mode == .humidity {
+            return 100
+        }
         let maxValue = values.max() ?? 0.0
         return (maxValue / Constants.gridStandard).rounded() * Constants.gridStandard + Constants.gridStandard
     }
 
+
+    private func drawBackGroundLineForDebug() {
+        UIColor.black.setFill()
+        UIColor.black.setStroke()
+
+        let graphPath = UIBezierPath()
+
+        let width = bounds.width
+        let height = bounds.height
+        graphPath.lineWidth = 2
+        graphPath.move(to: CGPoint(x: Constants.horizontalMargin, y: Constants.topMargin))
+        graphPath.addLine(to: CGPoint(x: width - Constants.horizontalMargin, y: Constants.topMargin))
+        graphPath.addLine(to: CGPoint(x: width - Constants.horizontalMargin, y: height - Constants.bottomMargin))
+        graphPath.addLine(to: CGPoint(x: Constants.horizontalMargin, y: height - Constants.bottomMargin))
+        graphPath.addLine(to: CGPoint(x: Constants.horizontalMargin, y: Constants.topMargin))
+        graphPath.stroke()
+    }
 }
