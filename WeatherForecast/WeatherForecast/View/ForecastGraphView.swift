@@ -34,6 +34,15 @@ final class ForecastGraphView: UIView {
                 return .white
             }
         }
+
+        var prefixText: String {
+            switch self {
+            case .temperature:
+                return "℃"
+            case .humidity:
+                return "%"
+            }
+        }
     }
 
     // MARK: - Properties
@@ -64,15 +73,19 @@ final class ForecastGraphView: UIView {
 
     override func draw(_ rect: CGRect) {
         let humidities = forecastDatas.map { Double($0.weatherDetail.humidity) }
-        print(">>> humidities", humidities)
-        drawGraphLines(rect, of: humidities, color: .white, mode: .humidity)
-
         let minimumTemperatures = forecastDatas.map { $0.weatherDetail.minimumTemperature }
-        drawGraphLines(rect, of: minimumTemperatures, color: .blue, mode: .temperature)
-
         let maximumTemperatures = forecastDatas.map { $0.weatherDetail.maximumTemperature }
-        print(">>> maximumTemperatures", maximumTemperatures)
+
+        drawGridLine(of: humidities, with: rect, mode: .humidity)
+        drawGridLine(of: minimumTemperatures, with: rect, mode: .temperature)
+        drawGridLine(of: maximumTemperatures, with: rect, mode: .temperature)
+
+        drawGraphLines(rect, of: humidities, color: .white, mode: .humidity)
+        drawGraphLines(rect, of: minimumTemperatures, color: .blue, mode: .temperature)
         drawGraphLines(rect, of: maximumTemperatures, color: .red.withAlphaComponent(0.5), mode: .temperature)
+
+        print(">>> humidities", humidities)
+        print(">>> maximumTemperatures", maximumTemperatures)
 
         drawBackGroundLineForDebug()
     }
@@ -87,6 +100,7 @@ final class ForecastGraphView: UIView {
     // MARK: - Private
 
     private func drawGraphLines(_ rect: CGRect, of pointValues: [Double], color: UIColor, mode: Mode) {
+
         color.setFill()
         color.setStroke()
 
@@ -109,7 +123,14 @@ final class ForecastGraphView: UIView {
 
         drawCircleDots(of: points)
 
-        drawGridLine(of: pointValues, with: rect, mode: mode)
+        zip(pointValues, points).forEach { (value, point) in
+            let originPoint = CGPoint(x: point.x - 20, y: point.y)
+            let label = UILabel(frame: CGRect(origin: originPoint, size: CGSize(width: 80, height: 30)))
+            addSubview(label)
+            label.textColor = mode.color
+            label.font = .preferredFont(forTextStyle: .caption1)
+            label.text = "\(value)\(mode.prefixText)"
+        }
     }
 
     private func drawingPoints(of pointValues: [Double], with rect: CGRect, mode: Mode) -> [CGPoint]? {
