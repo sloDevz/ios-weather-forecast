@@ -21,6 +21,14 @@ final class WeatherListViewController: UIViewController {
         service: NetworkService()
     )
 
+    private let backgroundIamgeView = {
+        let backgroundIamgeView = UIImageView()
+        backgroundIamgeView.image = UIImage(named: Constants.backgroundImageFileName)
+        backgroundIamgeView.contentMode = .scaleAspectFill
+
+        return backgroundIamgeView
+    }()
+
     private let locationDataManager = LocationDataManager()
     private let addressManager = AddressManager()
 
@@ -141,7 +149,6 @@ final class WeatherListViewController: UIViewController {
     private func setupGraphView() {
         view.addSubview(forecastGraphView)
         forecastGraphView.isHidden = true
-//        forecastGraphView.backgroundColor = .black
 
         forecastGraphView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
@@ -222,12 +229,17 @@ final class WeatherListViewController: UIViewController {
     // MARK: - Layout
 
     private func setupViewBackground() {
-        let backgroundIamgeView = UIImageView(frame: view.frame)
-        backgroundIamgeView.image = UIImage(named: Constants.backgroundImageFileName)
-        backgroundIamgeView.contentMode = .scaleAspectFill
 
         view.addSubview(backgroundIamgeView)
         view.sendSubviewToBack(backgroundIamgeView)
+
+        backgroundIamgeView.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            backgroundIamgeView.topAnchor.constraint(equalTo: view.topAnchor),
+            backgroundIamgeView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            backgroundIamgeView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundIamgeView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
     }
 
     private func setupLayout() {
