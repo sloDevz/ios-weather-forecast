@@ -72,6 +72,10 @@ final class ForecastGraphView: UIView {
     // MARK: - Draw
 
     override func draw(_ rect: CGRect) {
+        subviews.forEach { view in
+            view.removeFromSuperview()
+        }
+
         let humidities = forecastDatas.map { Double($0.weatherDetail.humidity) }
         let minimumTemperatures = forecastDatas.map { $0.weatherDetail.minimumTemperature }
         let maximumTemperatures = forecastDatas.map { $0.weatherDetail.maximumTemperature }
