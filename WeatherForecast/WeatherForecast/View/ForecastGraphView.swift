@@ -72,9 +72,7 @@ final class ForecastGraphView: UIView {
     // MARK: - Draw
 
     override func draw(_ rect: CGRect) {
-        subviews.forEach { view in
-            view.removeFromSuperview()
-        }
+        resetTemperatureLabels()
 
         let humidities = forecastDatas.map { Double($0.weatherDetail.humidity) }
         let minimumTemperatures = forecastDatas.map { $0.weatherDetail.minimumTemperature }
@@ -84,10 +82,13 @@ final class ForecastGraphView: UIView {
         drawGridLine(of: minimumTemperatures, with: rect, mode: .temperature)
         drawGridLine(of: maximumTemperatures, with: rect, mode: .temperature)
 
-        drawGraphLines(rect, of: humidities, color: .white, mode: .humidity)
-        drawGraphLines(rect, of: minimumTemperatures, color: .blue, mode: .temperature)
-        drawGraphLines(rect, of: maximumTemperatures, color: .red.withAlphaComponent(0.5), mode: .temperature)
+        drawGraphLines(of: humidities, with: rect, color: .white, mode: .humidity)
+        drawGraphLines(of: minimumTemperatures, with: rect, color: .blue, mode: .temperature)
+        drawGraphLines(of: maximumTemperatures, with: rect, color: .red.withAlphaComponent(0.5), mode: .temperature)
 
+        drawTemperatureLabels(of: humidities, with: rect, color: .white, mode: .humidity)
+        drawTemperatureLabels(of: minimumTemperatures, with: rect, color: .blue, mode: .temperature)
+        drawTemperatureLabels(of: maximumTemperatures, with: rect, color: .red, mode: .temperature)
         print(">>> humidities", humidities)
         print(">>> maximumTemperatures", maximumTemperatures)
 
@@ -103,7 +104,26 @@ final class ForecastGraphView: UIView {
 
     // MARK: - Private
 
-    private func drawGraphLines(_ rect: CGRect, of pointValues: [Double], color: UIColor, mode: Mode) {
+    private func resetTemperatureLabels() {
+        subviews.forEach { view in
+            view.removeFromSuperview()
+        }
+    }
+
+    private func drawTemperatureLabels(of pointValues: [Double], with rect: CGRect, color: UIColor, mode: Mode) {
+        guard let points = drawingPoints(of: pointValues, with: rect, mode: mode) else { return }
+
+        zip(pointValues, points).forEach { (value, point) in
+            let originPoint = CGPoint(x: point.x - 20, y: point.y)
+            let label = UILabel(frame: CGRect(origin: originPoint, size: CGSize(width: 80, height: 30)))
+            addSubview(label)
+            label.textColor = mode.color
+            label.font = .preferredFont(forTextStyle: .caption1)
+            label.text = "\(value)\(mode.prefixText)"
+        }
+    }
+
+    private func drawGraphLines(of pointValues: [Double], with rect: CGRect, color: UIColor, mode: Mode) {
 
         color.setFill()
         color.setStroke()
@@ -126,15 +146,6 @@ final class ForecastGraphView: UIView {
         graphPath.stroke()
 
         drawCircleDots(of: points)
-
-        zip(pointValues, points).forEach { (value, point) in
-            let originPoint = CGPoint(x: point.x - 20, y: point.y)
-            let label = UILabel(frame: CGRect(origin: originPoint, size: CGSize(width: 80, height: 30)))
-            addSubview(label)
-            label.textColor = mode.color
-            label.font = .preferredFont(forTextStyle: .caption1)
-            label.text = "\(value)\(mode.prefixText)"
-        }
     }
 
     private func drawingPoints(of pointValues: [Double], with rect: CGRect, mode: Mode) -> [CGPoint]? {
@@ -153,9 +164,6 @@ final class ForecastGraphView: UIView {
 
         let maxRange = maxRange(of: pointValues, mode: mode)
         let minRange = minRange(of: pointValues, mode: mode)
-
-        print(">>> maxRange", maxRange)
-        print(">>> minRange", minRange)
 
         // 특정 점의 Y 좌표
         let columnYPoint = { (column: Int) -> CGFloat in

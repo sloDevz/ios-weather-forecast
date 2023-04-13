@@ -12,22 +12,22 @@ final class WeatherListViewController: UIViewController {
     // MARK: - Constants
     
     private enum Constants {
-        static let backgroundImageFileName = "WeatherBackgroundImage"
+        static let backgroundImageFileName: String = "WeatherBackgroundImage"
+
+        static let changeLocationAlertControllerTitle: String = "위치변경"
+        static let changeLocationAlertControllerMessage: String = "날씨를 받아올 위치의 위도와 경도를 입력해주세요"
+        static let changeLocationTextFieldLatitudePlaceholder: String = "위도를 입력하세요."
+        static let changeLocationTextFieldLongitudePlaceholder: String = "경도를 입력하세요."
+        static let changeLocationConfirmActionText: String = "변경"
+        static let changeLocationCancelActionText: String = "취소"
     }
     
     // MARK: - Properties
+
     private let repository = OpenWeatherRepository(
         deserializer: JSONDesirializer(),
         service: NetworkService()
     )
-
-    private let backgroundIamgeView = {
-        let backgroundIamgeView = UIImageView()
-        backgroundIamgeView.image = UIImage(named: Constants.backgroundImageFileName)
-        backgroundIamgeView.contentMode = .scaleAspectFill
-
-        return backgroundIamgeView
-    }()
 
     private let locationDataManager = LocationDataManager()
     private let addressManager = AddressManager()
@@ -49,6 +49,13 @@ final class WeatherListViewController: UIViewController {
 
     // MARK: - UI Components
 
+    private let backgroundImageView = {
+        let imageView = UIImageView()
+        imageView.image = UIImage(named: Constants.backgroundImageFileName)
+        imageView.contentMode = .scaleAspectFill
+        return imageView
+    }()
+
     private lazy var collectionView = UICollectionView(
         frame: .zero,
         collectionViewLayout: createCollectionViewLayout()
@@ -57,7 +64,11 @@ final class WeatherListViewController: UIViewController {
 
     private let refreshControl = UIRefreshControl()
 
-    private let alertController = UIAlertController(title: "위치변경", message: "날씨를 받아올 위치의 위도와 경도를 입력해주세요", preferredStyle: .alert)
+    private let alertController = UIAlertController(
+        title: Constants.changeLocationAlertControllerTitle,
+        message: Constants.changeLocationAlertControllerMessage,
+        preferredStyle: .alert
+    )
 
     // MARK: - Lifecycle
 
@@ -188,15 +199,16 @@ final class WeatherListViewController: UIViewController {
 
     private func setupAlertControllerTextField() {
         alertController.addTextField { textFieid in
-            textFieid.placeholder = "위도를 입력하세요."
+            textFieid.placeholder = Constants.changeLocationTextFieldLatitudePlaceholder
         }
         alertController.addTextField { textFieid in
-            textFieid.placeholder = "경도를 입력하세요."
+            textFieid.placeholder = Constants.changeLocationTextFieldLongitudePlaceholder
         }
     }
 
     private func setupAlertControllerAction() {
-        let confirmAction = UIAlertAction(title: "변경", style: .default) { confirm in
+        let confirmAction = UIAlertAction(title: Constants.changeLocationConfirmActionText,
+                                          style: .default) { confirm in
             guard let longitude = Double(self.alertController.textFields?.first?.text ?? ""),
                   let latitude = Double(self.alertController.textFields?.last?.text ?? "") else { return }
 
@@ -208,7 +220,8 @@ final class WeatherListViewController: UIViewController {
             self.addressManager.fetchAddress(of: CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude))
         }
 
-        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
+        let cancelAction = UIAlertAction(title: Constants.changeLocationCancelActionText,
+                                         style: .cancel)
 
         alertController.addAction(confirmAction)
         alertController.addAction(cancelAction)
@@ -230,15 +243,15 @@ final class WeatherListViewController: UIViewController {
 
     private func setupViewBackground() {
 
-        view.addSubview(backgroundIamgeView)
-        view.sendSubviewToBack(backgroundIamgeView)
+        view.addSubview(backgroundImageView)
+        view.sendSubviewToBack(backgroundImageView)
 
-        backgroundIamgeView.translatesAutoresizingMaskIntoConstraints = false
+        backgroundImageView.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            backgroundIamgeView.topAnchor.constraint(equalTo: view.topAnchor),
-            backgroundIamgeView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            backgroundIamgeView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            backgroundIamgeView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+            backgroundImageView.topAnchor.constraint(equalTo: view.topAnchor),
+            backgroundImageView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            backgroundImageView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            backgroundImageView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
     }
 
